@@ -9,23 +9,37 @@ export default function ImagePickerExample() {
   useEffect(() => {
     (async () => {
       if (Platform.OS !== "web") {
-        const {
-          status,
-        } = await ImagePicker.requestCameraRollPermissionsAsync();
+        let { status } = await ImagePicker.requestCameraRollPermissionsAsync();
         if (status !== "granted") {
           alert("Sorry, we need camera roll permissions to make this work!");
+        }
+
+        cameraStatus = await ImagePicker.requestCameraPermissionsAsync();
+        status = cameraStatus.status;
+        if (status !== "granted") {
+          alert("Sorry, we need camera permissions to make this work!");
         }
       }
     })();
   }, []);
 
-  const pickImage = async () => {
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.All,
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 1,
-    });
+  const pickImage = async (isCamera) => {
+    let result;
+    if (isCamera) {
+      result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.All,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 1,
+      });
+    } else {
+      result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.All,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 1,
+      });
+    }
 
     console.log(result);
 
@@ -50,6 +64,7 @@ export default function ImagePickerExample() {
       };
 
       const fetchResult = await fetch(
+        // "http://192.168.1.66:8080/api/upload",
         "http://localhost:8080/api/upload",
         options
       );
@@ -62,7 +77,14 @@ export default function ImagePickerExample() {
 
   return (
     <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-      <Button title="Pick an image from camera roll" onPress={pickImage} />
+      <Button
+        title="Pick an image from camera roll"
+        onPress={() => pickImage(false)}
+      />
+      <Button
+        title="Pick an image from camera"
+        onPress={() => pickImage(true)}
+      />
       {image && (
         <Image source={{ uri: image }} style={{ width: 200, height: 200 }} />
       )}
