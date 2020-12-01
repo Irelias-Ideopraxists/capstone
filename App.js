@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Alert, Text, TouchableOpacity, Image } from 'react-native';
 import ImagePicker from 'react-native-image-picker';
 
-import Amplify from 'aws-amplify'
+import Amplify, { Storage } from 'aws-amplify'
 import config from './aws-exports'
 Amplify.configure({
   ...config,
@@ -11,6 +11,18 @@ Amplify.configure({
   },
 });
 import { withAuthenticator } from 'aws-amplify-react-native'
+
+const uploadToStorage = async (pathToImageFile, title) => {
+  try {
+    const response = await fetch(pathToImageFile);
+    const blob = await response.blob();
+    Storage.put(title, blob, {
+      contentType: 'image/jpeg',
+    });
+  } catch (err) {
+    console.log(err);
+  }
+};
 
 const App = () => {
   const [image, setImage] = useState(null);
@@ -26,8 +38,6 @@ const App = () => {
     };
 
     ImagePicker.showImagePicker(options, response => {
-      console.log({ response });
-
       if (response.didCancel) {
         console.log('User cancelled photo picker');
         Alert.alert('You did not select any image');
@@ -37,6 +47,9 @@ const App = () => {
         console.log('User tapped custom button: ', response.customButton);
       } else {
         setImage(response.uri)
+        const title = response.uri.split('/').slice(-1).toString();
+        console.log(title);
+        uploadToStorage(response.uri, title);
       }
     });
   }
@@ -54,6 +67,5 @@ const App = () => {
     </View>
   );
 }
-
 
 export default withAuthenticator(App);
